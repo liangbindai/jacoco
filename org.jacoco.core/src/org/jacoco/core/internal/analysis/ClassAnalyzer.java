@@ -60,11 +60,13 @@ public class ClassAnalyzer extends ClassProbesVisitor {
 
 	@Override
 	public MethodProbesVisitor visitMethod(final int access, final String name,
-			final String desc, final String signature, final String[] exceptions) {
+			final String desc, final String signature,
+			final String[] exceptions) {
 
 		InstrSupport.assertNotInstrumented(name, coverage.getName());
 
-		if (isMethodFiltered(access, name)) {
+		if (isMethodFiltered(coverage.getName(), coverage.getSuperName(),
+				access, name, desc)) {
 			return null;
 		}
 
@@ -82,8 +84,18 @@ public class ClassAnalyzer extends ClassProbesVisitor {
 		};
 	}
 
+	/**
+	 * @return <code>true</code> if method should not be analyzed
+	 */
 	// TODO: Use filter hook in future
-	private boolean isMethodFiltered(final int access, final String name) {
+	private boolean isMethodFiltered(final String className,
+			final String superClassName, final int access, final String name,
+			final String desc) {
+		if ("java/lang/Enum".equals(superClassName)
+				&& ("values".equals(name) || name.equals("valueOf") && desc
+						.equals("(Ljava/lang/String;)L" + className + ";"))) {
+			return true;
+		}
 		return (access & Opcodes.ACC_SYNTHETIC) != 0
 				&& !name.startsWith("lambda$");
 	}
